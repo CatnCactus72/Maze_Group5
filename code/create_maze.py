@@ -1,8 +1,11 @@
 import pygame
 from random import choice, randrange
+import algorithm
 
-RES = WIDTH, HEIGHT = 1026, 730
-TILE = 40
+RES = WIDTH, HEIGHT = 1080, 720
+TILE = 60
+THICK = 4
+
 cols, rows = WIDTH // TILE, HEIGHT // TILE
 
 class Cell:
@@ -10,32 +13,50 @@ class Cell:
         self.x, self.y = x, y
         self.walls = {'top': True, 'right': True, 'bottom': True, 'left': True}
         self.visited = False
-        self.thickness = 4
+        self.thickness = THICK
+        self.status = 1
 
     def draw(self, sc):
         x, y = self.x * TILE, self.y * TILE
         if self.walls['top']:
-            pygame.draw.line(sc, pygame.Color('black'), (x, y), (x + TILE, y), self.thickness)
+            pygame.draw.rect(sc, pygame.Color('green4'), pygame.Rect(x-self.thickness,y-self.thickness,TILE+2*self.thickness,self.thickness))
         if self.walls['right']:
-            pygame.draw.line(sc, pygame.Color('black'), (x + TILE, y), (x + TILE, y + TILE), self.thickness)
+            pygame.draw.rect(sc, pygame.Color('green4'), pygame.Rect(x+TILE,y-self.thickness,self.thickness,TILE+2*self.thickness))
         if self.walls['bottom']:
-            pygame.draw.line(sc, pygame.Color('black'), (x + TILE, y + TILE), (x , y + TILE), self.thickness)
+            pygame.draw.rect(sc, pygame.Color('green4'), pygame.Rect(x-self.thickness,y+TILE,TILE+2*self.thickness,self.thickness))
         if self.walls['left']:
-            pygame.draw.line(sc, pygame.Color('black'), (x, y + TILE), (x, y), self.thickness)
+            pygame.draw.rect(sc, pygame.Color('green4'), pygame.Rect(x-self.thickness,y-self.thickness,self.thickness,TILE+2*self.thickness))
+            
+    def color_cell(self, sc, color):
+        pygame.draw.rect(sc, pygame.Color(color),((self.x*TILE), (self.y*TILE), TILE, TILE))
+        self.draw(sc)
+
+
+    # def draw(self, sc):
+    #     x, y = self.x * TILE, self.y * TILE
+    #     if self.walls['top']:
+    #         pygame.draw.line(sc, pygame.Color('black'), (x - 1, y), (x + TILE + 1, y), self.thickness)
+    #     if self.walls['right']:
+    #         pygame.draw.line(sc, pygame.Color('black'), (x + TILE, y - 1), (x + TILE, y + TILE + 1), self.thickness)
+    #     if self.walls['bottom']:
+    #         pygame.draw.line(sc, pygame.Color('black'), (x + TILE - 1, y + TILE), (x + 1, y + TILE), self.thickness)
+    #     if self.walls['left']:
+    #         pygame.draw.line(sc, pygame.Color('black'), (x, y + TILE - 1), (x, y + 1), self.thickness)
 
     def get_rects(self):
         rects = []
         x, y = self.x * TILE, self.y * TILE
         if self.walls['top']:
-            rects.append(pygame.Rect( (x, y), (TILE, self.thickness) ))
+            rects.append(pygame.Rect(x-self.thickness,y-self.thickness,TILE+2*self.thickness,self.thickness))
         if self.walls['right']:
-            rects.append(pygame.Rect( (x + TILE, y), (self.thickness, TILE) ))
+            rects.append(pygame.Rect(x+TILE,y-self.thickness,self.thickness,TILE+2*self.thickness))
         if self.walls['bottom']:
-            rects.append(pygame.Rect( (x, y + TILE), (TILE , self.thickness) ))
+            rects.append(pygame.Rect(x-self.thickness,y+TILE,TILE+2*self.thickness,self.thickness))
         if self.walls['left']:
-            rects.append(pygame.Rect( (x, y), (self.thickness, TILE) ))
+            rects.append(pygame.Rect(x-self.thickness,y-self.thickness,self.thickness,TILE+2*self.thickness))
         return rects
 
+    
     def check_cell(self, x, y):
         find_index = lambda x, y: x + y * cols
         if x < 0 or x > cols - 1 or y < 0 or y > rows - 1:
@@ -58,6 +79,16 @@ class Cell:
         if left and not left.visited:
             neighbors.append(left)
         return choice(neighbors) if neighbors else False
+    
+    def make_tom_pos(self):
+        self.status = 2
+    def make_jerry_pos(self):
+        self.status = 3
+    def make_blank(self):
+        self.status = 1
+
+    def make_blank(self):
+        self.status = 1
 
 def remove_walls(current, next):
     dx = current.x - next.x
@@ -80,7 +111,6 @@ def generate_maze():
     current_cell = grid_cells[0]
     array = []
     break_count = 1
-
     while break_count != len(grid_cells):
         current_cell.visited = True
         next_cell = current_cell.check_neighbors(grid_cells)
