@@ -47,8 +47,8 @@ if int(lst[1]) != 2:
     elif game_level == 40:
         create_maze.TILE = 40
         create_maze.cols, create_maze.rows = create_maze.WIDTH // 40, create_maze.HEIGHT // 40
-        algorithm.MODE = 150
-        create_maze.THICK = 3
+        algorithm.MODE = 50
+        create_maze.THICK = 2
         nums_food = 30
     elif game_level == 100:
         create_maze.TILE = 20
@@ -208,8 +208,8 @@ def read_saved_game(username : str):
     elif game_level == 40:
         create_maze.TILE = 40
         create_maze.cols, create_maze.rows = create_maze.WIDTH // 40, create_maze.HEIGHT // 40
-        algorithm.MODE = 150
-        create_maze.THICK = 3
+        algorithm.MODE = 50
+        create_maze.THICK = 2
         nums_food = 30
     elif game_level == 100:
         create_maze.TILE = 20
@@ -252,8 +252,8 @@ def load_game(username: str):
     elif game_level == 40:
         create_maze.TILE = 40
         create_maze.cols, create_maze.rows = create_maze.WIDTH // 40, create_maze.HEIGHT // 40
-        algorithm.MODE = 150
-        create_maze.THICK = 3
+        algorithm.MODE = 50
+        create_maze.THICK = 2
         nums_food = 30
     elif game_level == 100:
         create_maze.TILE = 20
@@ -447,7 +447,8 @@ mini_text_font = pygame.font.Font(r"./font/Shermlock.ttf", 40)
 lastpos = (-1, -1)
 is_set = False
 current_direction = None
-default_algo = 1
+default_algo = 2
+incoming_algo = 1
 # pause status, win status
 autoplay_pause = False
 pause = False
@@ -517,8 +518,8 @@ while running:
         elif game_level == 40:
             create_maze.TILE = 40
             create_maze.cols, create_maze.rows = create_maze.WIDTH // 40, create_maze.HEIGHT // 40
-            algorithm.MODE = 150
-            create_maze.THICK = 3
+            algorithm.MODE = 50
+            create_maze.THICK = 2
             nums_food = 30
         elif game_level == 100:
             create_maze.TILE = 20
@@ -886,7 +887,18 @@ while running:
             surface.blit(game_surface, (0, 0))
             game_surface.blit(bg_game, (0, 0))
             if not autoplay_pause:
-                path = findPathBetween2Point(maze, algo=default_algo) if findPathBetween2Point(maze, algo=default_algo) else []
+                walls_collide_list = sum(
+                    [cell.get_rects() for cell in maze],
+                    [
+                        pygame.Rect(0, 0, create_maze.TILE * create_maze.cols, create_maze.THICK),
+                        pygame.Rect(0, 0, create_maze.THICK, create_maze.TILE * create_maze.rows),
+                        pygame.Rect(create_maze.cols * create_maze.TILE - create_maze.THICK, 0, create_maze.THICK, create_maze.TILE * create_maze.rows),
+                        pygame.Rect(0, create_maze.rows * create_maze.TILE - create_maze.THICK, create_maze.TILE * create_maze.cols, create_maze.THICK)
+                    ]
+                )
+                if incoming_algo != default_algo:
+                    default_algo = incoming_algo
+                    path = findPathBetween2Point(maze, algo=default_algo) if findPathBetween2Point(maze, algo=default_algo) else []
                 pos = get_player_current_cell()
                 if not is_set:
                     is_set = True
@@ -910,18 +922,21 @@ while running:
                         else:
                             bg.blit(mini_text_font.render("Click to restart!", True, pygame.Color("white")), (0, 0))
                 else:
+                    path.pop(0)
                     maze2D[CurrentPos[0]][CurrentPos[1]].make_blank()
                     maze2D[pos[0]][pos[1]].make_tom_pos()
                     CurrentPos = pos
                     maze = list(maze2D.flatten())                    
                     is_set = False
             if hint_1:
-                default_algo = 1
+                incoming_algo = 1
+                path = findPathBetween2Point(maze, algo=incoming_algo) if findPathBetween2Point(maze, algo=incoming_algo) else []
                 [cell.draw(game_surface) for cell in maze]
                 [cell.color_cell(game_surface, "blue") for cell in getPathCellList(path,maze2D)[1:]]
                 
             if hint_2:
-                default_algo = 2
+                incoming_algo = 2
+                path = findPathBetween2Point(maze, algo=incoming_algo) if findPathBetween2Point(maze, algo=incoming_algo) else []
                 [cell.draw(game_surface) for cell in maze]
                 [cell.color_cell(game_surface, "green") for cell in getPathCellList(path,maze2D)[1:]]
             game_surface.blit(des_img,des_rect)
